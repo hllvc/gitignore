@@ -1,0 +1,47 @@
+#!/bin/sh
+
+ARGUMENT="-e" # custom argument for exception
+
+GITIGNORE=.gitignore # .gitignore file
+GITIGNORE_FILES=(  ) # already ignored files
+if [[  -e $GITIGNORE ]]; then
+	while read line; do
+		GITIGNORE_FILES+=( "$line" )
+	done < $GITIGNORE
+fi
+
+FOLDER_IGNORE_FILES=( ".gitignore" "." ".." ".git" )
+
+IGNORE_FILES=(  )
+OLD_FILES=(  )
+
+if [ "$1" = "$ARGUMENT" ]; then
+	IGNORE_FILES=( "`ls -a`" ) # files to be ignored
+	# removing excluded files
+	for item in $@; do
+		IGNORE_FILES=( "${IGNORE_FILES[@]/$item}" )
+	done
+	# removing already ignored files
+	for item in ${GITIGNORE_FILES[@]}; do
+		IGNORE_FILES=( "${IGNORE_FILES[@]/$item}" )
+	done
+else
+	# add all argument files to IGNORE_FILES
+	for item in "$@"; do
+		IGNORE_FILES+=( "$item" )
+	done
+	# make sure that files do not repeat in .gitignore
+	for item in ${GITIGNORE_FILES[@]}; do
+		IGNORE_FILES=( "${IGNORE_FILES[@]/$item}" )
+	done
+fi
+
+# ignore predefined files like ., .., .gitignore, .git, ...
+for item in ${FOLDER_IGNORE_FILES[@]}; do
+	IGNORE_FILES=${IGNORE_FILES[@]/$item}
+done
+
+# append files to .gitignore
+for item in ${IGNORE_FILES[@]}; do
+	echo "$item" >> $GITIGNORE
+done
